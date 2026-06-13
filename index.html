@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>أداة قياس زمن إنهاء إجراءات المسافرين</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-900:#13401a;
+    --green-700:#1b5e20;
+    --green-600:#2e7d32;
+    --green-500:#3a9140;
+    --green-50:#e8f5e9;
+    --green-tint:#f1f8f2;
+    --ink:#1c2522;
+    --muted:#5d6b63;
+    --line:#dfe7e0;
+    --bg:#f4f7f4;
+    --white:#ffffff;
+    --amber:#b7791f;
+    --red:#c0392b;
+    --shadow:0 10px 30px rgba(19,64,26,.10);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Cairo',system-ui,Tahoma,sans-serif;
+    background:
+      radial-gradient(1200px 500px at 100% -10%, #e9f3ea 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto}
+  .topbar{
+    display:flex;align-items:center;gap:12px;justify-content:center;
+    margin-bottom:18px;
+  }
+  .topbar h1{
+    font-size:clamp(18px,2.4vw,24px);font-weight:800;color:var(--green-900);
+    margin:0;letter-spacing:-.2px;
+  }
+  .topbar .clock{font-size:24px}
+
+  /* ===== بطاقة عامة ===== */
+  .card{
+    background:var(--white);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .card-head{
+    background:linear-gradient(180deg,var(--green-700),var(--green-600));
+    color:#fff;padding:18px 22px;font-weight:800;font-size:18px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .card-body{padding:22px}
+
+  /* ===== شاشة الفلترة (البوابة) ===== */
+  #gate-screen .field{margin-bottom:20px}
+  .label{display:block;font-weight:700;margin-bottom:10px;color:var(--green-900)}
+  .hint{font-size:13px;color:var(--muted);font-weight:400}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+
+  .opt{
+    border:2px solid var(--line);background:var(--white);
+    border-radius:12px;padding:14px 16px;cursor:pointer;
+    font-weight:700;color:var(--ink);text-align:center;
+    transition:.15s;user-select:none;
+  }
+  .opt:hover{border-color:var(--green-500);background:var(--green-tint)}
+  .opt.active{
+    border-color:var(--green-600);background:var(--green-50);
+    color:var(--green-900);box-shadow:inset 0 0 0 1px var(--green-600);
+  }
+  input[type=text]{
+    width:100%;padding:13px 15px;border:1.5px solid var(--line);
+    border-radius:12px;font-family:inherit;font-size:15px;background:var(--white);
+  }
+  input[type=text]:focus{outline:none;border-color:var(--green-600)}
+
+  .btn{
+    width:100%;border:none;border-radius:12px;padding:15px;
+    font-family:inherit;font-weight:800;font-size:16px;cursor:pointer;
+    transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-primary{background:var(--green-600);color:#fff}
+  .btn-primary:hover{background:var(--green-700)}
+  .btn-primary:disabled{background:#9bbfa0;cursor:not-allowed}
+  .btn-blue{background:#9cc3df;color:#163b52}
+  .btn-blue:hover{background:#85b4d6}
+  .btn-ghost{background:var(--white);color:var(--green-700);border:1.5px solid var(--green-600)}
+  .btn-ghost:hover{background:var(--green-tint)}
+  .btn-danger{background:var(--red);color:#fff}
+
+  /* ===== شريط السياق المختار ===== */
+  .context-bar{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    background:var(--green-tint);border:1px solid var(--green-50);
+    border-radius:12px;padding:12px 16px;margin-bottom:18px;
+  }
+  .chip{
+    background:var(--white);border:1px solid var(--line);border-radius:999px;
+    padding:6px 14px;font-weight:700;font-size:14px;color:var(--green-900);
+  }
+  .chip b{color:var(--muted);font-weight:600}
+  .context-bar .spacer{flex:1}
+  .link-btn{
+    background:none;border:none;color:var(--green-700);font-family:inherit;
+    font-weight:700;cursor:pointer;text-decoration:underline;font-size:14px;padding:6px;
+  }
+
+  /* ===== المؤقت ===== */
+  .timer-box{
+    background:var(--green-tint);border:1px solid var(--green-50);
+    border-radius:14px;text-align:center;padding:26px;margin-bottom:18px;
+  }
+  .timer-box .lbl{color:var(--muted);font-weight:700;margin-bottom:6px}
+  .timer-display{
+    font-size:clamp(46px,9vw,72px);font-weight:800;color:var(--green-700);
+    font-variant-numeric:tabular-nums;letter-spacing:2px;line-height:1;
+  }
+  .timer-display.running{color:var(--green-600)}
+
+  .toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+  @media(max-width:560px){.toggle-row{grid-template-columns:1fr}}
+
+  /* ===== لوحة التحليل ===== */
+  .tabs{display:flex;gap:8px;margin:22px 0 0}
+  .tab{
+    flex:1;padding:12px;text-align:center;font-weight:800;cursor:pointer;
+    border:1px solid var(--line);background:var(--white);color:var(--muted);
+    border-radius:12px 12px 0 0;border-bottom:none;
+  }
+  .tab.active{background:var(--green-700);color:#fff;border-color:var(--green-700)}
+
+  .filter-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  select{
+    padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:14px;font-weight:700;background:var(--white);color:var(--ink);
+    min-width:160px;
+  }
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px}
+  @media(max-width:880px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:520px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{
+    background:var(--white);border:1px solid var(--line);border-radius:14px;
+    padding:16px 12px;text-align:center;
+  }
+  .kpi .icon{
+    width:40px;height:40px;margin:0 auto 8px;border-radius:50%;
+    background:var(--green-50);display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+  }
+  .kpi .k-lbl{font-size:12.5px;color:var(--muted);font-weight:700;margin-bottom:6px;line-height:1.3}
+  .kpi .k-val{font-size:22px;font-weight:800;color:var(--green-700)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead th{
+    background:var(--green-700);color:#fff;padding:12px 10px;font-weight:700;text-align:center;
+  }
+  tbody td{padding:11px 10px;text-align:center;border-bottom:1px solid var(--line)}
+  tbody tr:nth-child(even){background:var(--green-tint)}
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);
+    background:var(--green-700);color:#fff;padding:14px 26px;border-radius:999px;
+    font-weight:800;box-shadow:var(--shadow);transition:.3s;z-index:99;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--red)}
+
+  .muted-note{text-align:center;color:var(--muted);font-size:13px;margin-top:10px}
+  .empty{text-align:center;color:var(--muted);padding:30px;font-weight:700}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <span class="clock">⏱️</span>
+    <h1>أداة قياس زمن إنهاء إجراءات المسافرين</h1>
+  </div>
+
+  <!-- ============ (1) شاشة الفلترة الإلزامية ============ -->
+  <div id="gate-screen" class="card">
+    <div class="card-head">📍 اختر الصالة والقسم للبدء</div>
+    <div class="card-body">
+
+      <div class="field">
+        <span class="label">١) اختر الصالة <span class="hint">(إلزامي)</span></span>
+        <div class="grid2" id="terminal-opts">
+          <div class="opt" data-val="صالة 1">صالة 1</div>
+          <div class="opt" data-val="الصالة الشمالية">الصالة الشمالية</div>
+          <div class="opt" data-val="مجمع صالات الحج والعمرة">مجمع صالات الحج والعمرة</div>
+          <div class="opt" data-val="الصالة الجنوبية">الصالة الجنوبية</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">٢) اختر القسم / الاتجاه <span class="hint">(إلزامي)</span></span>
+        <div class="grid2" id="section-opts">
+          <div class="opt" data-val="قدوم">🛬 قدوم</div>
+          <div class="opt" data-val="مغادرة">🛫 مغادرة</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">٣) اسم أو رقم مُدخِل البيانات <span class="hint">(إلزامي)</span></span>
+        <input type="text" id="operator-input" placeholder="اكتب اسمك أو رقمك الوظيفي..." />
+      </div>
+
+      <button class="btn btn-primary" id="confirm-btn" disabled>✔️ تأكيد وبدء</button>
+    </div>
+  </div>
+
+  <!-- ============ (2) الواجهة الرئيسية ============ -->
+  <div id="main-screen" class="hidden">
+
+    <div class="context-bar">
+      <span class="chip"><b>الصالة:</b> <span id="ctx-terminal">—</span></span>
+      <span class="chip"><b>القسم:</b> <span id="ctx-section">—</span></span>
+      <span class="chip"><b>المُدخِل:</b> <span id="ctx-operator">—</span></span>
+      <span class="spacer"></span>
+      <button class="link-btn" id="change-ctx">تغيير الصالة / القسم</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="capture">⏱️ التسجيل</div>
+      <div class="tab" data-tab="dashboard">📊 لوحة التحليل</div>
+    </div>
+
+    <!-- تبويب التسجيل -->
+    <div id="tab-capture" class="card" style="border-radius:0 0 16px 16px;border-top:none">
+      <div class="card-body">
+
+        <div class="field">
+          <span class="label">نوع المسافر (حالة البصمة)</span>
+          <div class="toggle-row" id="bio-opts">
+            <div class="opt active" data-val="له بصمة مسبقة">له بصمة مسبقة</div>
+            <div class="opt" data-val="ليس له بصمة">ليس له بصمة</div>
+          </div>
+        </div>
+
+        <div class="timer-box">
+          <div class="lbl">الزمن الجاري</div>
+          <div class="timer-display" id="timer">00:00</div>
+        </div>
+
+        <div class="toggle-row">
+          <button class="btn btn-primary" id="start-btn">▶️ بدء</button>
+          <button class="btn btn-blue" id="stop-btn" disabled>⏹️ إيقاف وإرسال</button>
+        </div>
+
+        <div id="session-log" class="hidden">
+          <span class="label" style="margin-top:8px">آخر تسجيلاتك في هذه الجلسة</span>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>القسم</th><th>حالة البصمة</th><th>المدة (ث)</th><th>الوقت</th></tr></thead>
+              <tbody id="session-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- تبويب لوحة التحليل -->
+    <div id="tab-dashboard" class="card hidden" style="border-radius:0 0 16px 16px;border-top:none">
+      <div class="card-body">
+
+        <div class="filter-row">
+          <select id="f-terminal"><option value="">كل الصالات</option></select>
+          <select id="f-section">
+            <option value="">كل الأقسام</option>
+            <option value="قدوم">قدوم</option>
+            <option value="مغادرة">مغادرة</option>
+          </select>
+          <button class="btn btn-ghost" id="refresh-btn" style="width:auto;padding:11px 20px">🔄 تحديث البيانات</button>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="icon">👥</div><div class="k-lbl">حجم العينة</div><div class="k-val" id="k-count">0</div></div>
+          <div class="kpi"><div class="icon">⏱️</div><div class="k-lbl">المتوسط العام (ث)</div><div class="k-val" id="k-avg">0</div></div>
+          <div class="kpi"><div class="icon">🔵</div><div class="k-lbl">متوسط (له بصمة)</div><div class="k-val" id="k-avg-yes">0</div></div>
+          <div class="kpi"><div class="icon">⚪</div><div class="k-lbl">متوسط (بلا بصمة)</div><div class="k-val" id="k-avg-no">0</div></div>
+          <div class="kpi"><div class="icon">⬆️</div><div class="k-lbl">أطول مدة (ث)</div><div class="k-val" id="k-max">0</div></div>
+          <div class="kpi"><div class="icon">⬇️</div><div class="k-lbl">أقل مدة (ث)</div><div class="k-val" id="k-min">0</div></div>
+        </div>
+
+        <span class="label">📋 التفصيل حسب الصالة والقسم</span>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>الصالة</th><th>القسم</th><th>العينة</th>
+                <th>المتوسط (ث)</th><th>له بصمة (ث)</th><th>بلا بصمة (ث)</th>
+                <th>الأطول (ث)</th><th>الأقل (ث)</th>
+              </tr>
+            </thead>
+            <tbody id="breakdown-body"></tbody>
+          </table>
+        </div>
+        <div class="muted-note">جميع الأوقات محسوبة بالثواني · تُحدّث الأرقام من الورقة الرئيسية المشتركة.</div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ⚙️  الإعداد الوحيد المطلوب منكِ:
+   الصقي رابط تطبيق الويب (Web App URL) من Google Apps Script هنا.
+   ============================================================ */
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbykkazS89tmkpkOnJpJWaM-D1Tdbd_JoUKfPipt5WzqyfVja2VThPMOqMzxRDFDOT5V/exec";
+
+/* ---------- الحالة ---------- */
+const state = {
+  terminal: localStorage.getItem('hajj_terminal') || "",
+  section:  localStorage.getItem('hajj_section')  || "",
+  operator: localStorage.getItem('hajj_operator') || "",
+  biometric:"له بصمة مسبقة",
+  timerStart:null, timerInterval:null, sessionRows:[]
+};
+
+/* ---------- أدوات مساعدة ---------- */
+const $ = s => document.querySelector(s);
+const fmtClock = secs => {
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(Math.floor(secs%60)).padStart(2,'0');
+  return m+":"+s;
+};
+function showToast(msg, isErr){
+  const t = $("#toast"); t.textContent = msg;
+  t.className = "toast show" + (isErr?" err":"");
+  setTimeout(()=>t.className="toast",2600);
+}
+
+/* ============================================================
+   (1) منطق شاشة الفلترة
+   ============================================================ */
+function bindOptionGroup(containerSel, onPick, current){
+  const opts = document.querySelectorAll(containerSel+" .opt");
+  opts.forEach(o=>{
+    if(o.dataset.val===current) o.classList.add('active');
+    o.addEventListener('click',()=>{
+      opts.forEach(x=>x.classList.remove('active'));
+      o.classList.add('active');
+      onPick(o.dataset.val);
+    });
+  });
+}
+function validateGate(){
+  const ok = state.terminal && state.section && $("#operator-input").value.trim();
+  $("#confirm-btn").disabled = !ok;
+}
+bindOptionGroup("#terminal-opts", v=>{state.terminal=v; validateGate();}, state.terminal);
+bindOptionGroup("#section-opts",  v=>{state.section=v;  validateGate();}, state.section);
+$("#operator-input").value = state.operator;
+$("#operator-input").addEventListener('input', validateGate);
+validateGate();
+
+$("#confirm-btn").addEventListener('click',()=>{
+  state.operator = $("#operator-input").value.trim();
+  localStorage.setItem('hajj_terminal',state.terminal);
+  localStorage.setItem('hajj_section', state.section);
+  localStorage.setItem('hajj_operator',state.operator);
+  enterMainScreen();
+});
+
+function enterMainScreen(){
+  $("#ctx-terminal").textContent = state.terminal;
+  $("#ctx-section").textContent  = state.section;
+  $("#ctx-operator").textContent = state.operator;
+  $("#gate-screen").classList.add('hidden');
+  $("#main-screen").classList.remove('hidden');
+  populateFilterTerminals();
+}
+$("#change-ctx").addEventListener('click',()=>{
+  $("#main-screen").classList.add('hidden');
+  $("#gate-screen").classList.remove('hidden');
+});
+
+/* ============================================================
+   (2) منطق المؤقت ونوع المسافر
+   ============================================================ */
+bindOptionGroup("#bio-opts", v=>{state.biometric=v;}, state.biometric);
+
+$("#start-btn").addEventListener('click',()=>{
+  state.timerStart = Date.now();
+  $("#timer").classList.add('running');
+  $("#start-btn").disabled = true;
+  $("#stop-btn").disabled  = false;
+  state.timerInterval = setInterval(()=>{
+    const secs = (Date.now()-state.timerStart)/1000;
+    $("#timer").textContent = fmtClock(secs);
+  },200);
+});
+
+$("#stop-btn").addEventListener('click',()=>{
+  if(!state.timerStart) return;
+  clearInterval(state.timerInterval);
+  const duration = Math.round(((Date.now()-state.timerStart)/1000)*10)/10; // ثانية بخانة عشرية
+  $("#timer").classList.remove('running');
+  $("#start-btn").disabled = false;
+  $("#stop-btn").disabled  = true;
+  $("#timer").textContent  = "00:00";
+  const startedAt = state.timerStart;
+  state.timerStart = null;
+  submitRow(duration, startedAt);
+});
+
+function submitRow(duration, startedAt){
+  const payload = {
+    terminal: state.terminal,
+    section:  state.section,
+    biometric:state.biometric,
+    duration: duration,
+    operator: state.operator
+  };
+
+  // إرسال الكتابة إلى الخادم (no-cors يتجاوز قيود المتصفح عبر النطاقات)
+  fetch(WEB_APP_URL, {
+    method:"POST",
+    mode:"no-cors",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  })
+  .then(()=> showToast("✅ تم إرسال التسجيل إلى الورقة الرئيسية"))
+  .catch(()=> showToast("⚠️ تعذّر الإرسال — تحقّقي من الاتصال والرابط", true));
+
+  // سجل محلي للجلسة (تأكيد بصري فوري)
+  state.sessionRows.unshift({
+    section: state.section, biometric: state.biometric,
+    duration: duration, time: new Date().toLocaleTimeString('ar-SA')
+  });
+  renderSessionLog();
+}
+
+function renderSessionLog(){
+  if(!state.sessionRows.length) return;
+  $("#session-log").classList.remove('hidden');
+  $("#session-body").innerHTML = state.sessionRows.slice(0,8).map((r,i)=>
+    `<tr><td>${i+1}</td><td>${r.section}</td><td>${r.biometric}</td><td>${r.duration}</td><td>${r.time}</td></tr>`
+  ).join('');
+}
+
+/* ============================================================
+   (3) التبويبات
+   ============================================================ */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const isCapture = t.dataset.tab==="capture";
+    $("#tab-capture").classList.toggle('hidden',!isCapture);
+    $("#tab-dashboard").classList.toggle('hidden',isCapture);
+    if(!isCapture) loadDashboard();
+  });
+});
+
+/* ============================================================
+   (4) لوحة التحليل — القراءة عبر JSONP (لتجاوز CORS)
+   ============================================================ */
+let DATA = [];
+
+function populateFilterTerminals(){
+  const terms = ["صالة 1","الصالة الشمالية","مجمع صالات الحج والعمرة","الصالة الجنوبية"];
+  $("#f-terminal").innerHTML = '<option value="">كل الصالات</option>' +
+    terms.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function loadDashboard(){
+  if(!WEB_APP_URL || WEB_APP_URL.indexOf("ضعي_رابط")===0){
+    showToast("⚠️ لم يتم وضع رابط تطبيق الويب بعد", true); return;
+  }
+  showToast("⏳ جاري تحميل البيانات...");
+  const cb = "jsonp_"+Date.now();
+  window[cb] = resp=>{
+    DATA = (resp && resp.data) ? resp.data : [];
+    renderDashboard();
+    delete window[cb]; document.getElementById(cb)?.remove();
+  };
+  const s = document.createElement('script');
+  s.id = cb;
+  s.src = WEB_APP_URL + "?action=read&callback=" + cb + "&_=" + Date.now();
+  s.onerror = ()=>{ showToast("⚠️ تعذّر تحميل البيانات", true); };
+  document.body.appendChild(s);
+}
+$("#refresh-btn").addEventListener('click', loadDashboard);
+$("#f-terminal").addEventListener('change', renderDashboard);
+$("#f-section").addEventListener('change', renderDashboard);
+
+const avg = a => a.length ? Math.round((a.reduce((x,y)=>x+y,0)/a.length)*10)/10 : 0;
+
+function statsFor(rows){
+  const d = rows.map(r=>Number(r.duration)||0);
+  const yes = rows.filter(r=>r.biometric==="له بصمة مسبقة").map(r=>Number(r.duration)||0);
+  const no  = rows.filter(r=>r.biometric==="ليس له بصمة").map(r=>Number(r.duration)||0);
+  return {
+    count: rows.length,
+    avg: avg(d),
+    avgYes: avg(yes),
+    avgNo: avg(no),
+    max: d.length?Math.max(...d):0,
+    min: d.length?Math.min(...d):0
+  };
+}
+
+function renderDashboard(){
+  const ft = $("#f-terminal").value, fs = $("#f-section").value;
+  const filtered = DATA.filter(r=>(!ft||r.terminal===ft)&&(!fs||r.section===fs));
+
+  const s = statsFor(filtered);
+  $("#k-count").textContent   = s.count;
+  $("#k-avg").textContent     = s.avg;
+  $("#k-avg-yes").textContent = s.avgYes;
+  $("#k-avg-no").textContent  = s.avgNo;
+  $("#k-max").textContent     = s.max;
+  $("#k-min").textContent     = s.min;
+
+  // تفصيل: كل تركيبة صالة × قسم
+  const groups = {};
+  filtered.forEach(r=>{
+    const key = r.terminal + "||" + r.section;
+    (groups[key] = groups[key] || []).push(r);
+  });
+  const keys = Object.keys(groups).sort();
+  const body = $("#breakdown-body");
+  if(!keys.length){
+    body.innerHTML = `<tr><td colspan="8" class="empty">لا توجد بيانات بعد لهذا الفلتر</td></tr>`;
+    return;
+  }
+  body.innerHTML = keys.map(k=>{
+    const [t,sec] = k.split("||");
+    const st = statsFor(groups[k]);
+    return `<tr>
+      <td>${t}</td><td>${sec}</td><td>${st.count}</td>
+      <td>${st.avg}</td><td>${st.avgYes}</td><td>${st.avgNo}</td>
+      <td>${st.max}</td><td>${st.min}</td></tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
